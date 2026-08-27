@@ -27,7 +27,7 @@ const MovieDetail = () => {
     const fetchDetails = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`http://127.0.0.1:5000/api/movies/details/${id}`);
+        const res = await axios.get(`https://vibeflix-ai.vercel.app/api/movies/details/${id}`);
         setMovie(res.data);
       } catch (err) {
         console.error('Error fetching movie details:', err);
@@ -45,11 +45,11 @@ const MovieDetail = () => {
       if (inWatchlist) {
         // Find the database ID if we only have tmdbId
         const dbId = user.watchlist.find(m => m.tmdbId === movie.id || m._id === movie.id)?._id;
-        await axios.delete(`http://127.0.0.1:5000/api/movies/watchlist/${dbId || movie.id}`, {
+        await axios.delete(`https://vibeflix-ai.vercel.app/api/movies/watchlist/${dbId || movie.id}`, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
       } else {
-        await axios.post('http://127.0.0.1:5000/api/movies/watchlist', 
+        await axios.post('https://vibeflix-ai.vercel.app/api/movies/watchlist',
           { 
             movie: {
               tmdbId: movie.id,
@@ -75,7 +75,7 @@ const MovieDetail = () => {
     setUserRating(rating);
     if (!user) return;
     try {
-      await axios.post('http://127.0.0.1:5000/api/movies/review', 
+      await axios.post('https://vibeflix-ai.vercel.app/api/movies/review',
         { movieId: movie.id, rating, comment: 'Rated via CineMatch UI' },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
