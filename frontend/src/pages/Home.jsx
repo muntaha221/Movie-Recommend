@@ -15,8 +15,8 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const [trendRes, collRes] = await Promise.all([
-          axios.get('https://vibeflix-ai.vercel.app/api/movies/trending'),
-          axios.get('https://vibeflix-ai.vercel.app/api/movies/collections')
+          axios.get('/api/movies/trending'),
+          axios.get('/api/movies/collections')
         ]);
         setTrending(trendRes.data);
         setCollections(collRes.data);

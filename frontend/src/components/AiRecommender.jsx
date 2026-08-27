@@ -16,7 +16,7 @@ const AiRecommender = ({ onRecommendations }) => {
     setError(null);
 
     try {
-      const res = await axios.post('https://vibeflix-ai.vercel.app/api/ai/recommend', { prompt });
+      const res = await axios.post('/api/ai/recommend', { prompt });
       if (res.data.recommendations && res.data.recommendations.length > 0) {
         onRecommendations(res.data.recommendations);
       } else {

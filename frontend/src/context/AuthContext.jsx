@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await axios.get('https://vibeflix-ai.vercel.app/api/auth/profile', {
+          const res = await axios.get('/api/auth/profile', {
             headers: { Authorization: `Bearer ${token}` }
           });
           setUser({ token, ...res.data });
@@ -30,14 +30,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password, username) => {
     const payload = username ? { username } : { email, password };
-    const res = await axios.post('https://vibeflix-ai.vercel.app/api/auth/login', payload);
+    const res = await axios.post('/api/auth/login', payload);
     localStorage.setItem('token', res.data.token);
     setUser({ token: res.data.token, ...res.data.user });
     return res.data;
   };
 
   const register = async (userData) => {
-    const res = await axios.post('https://vibeflix-ai.vercel.app/api/auth/register', userData);
+    const res = await axios.post('/api/auth/register', userData);
     localStorage.setItem('token', res.data.token);
     setUser({ token: res.data.token, ...res.data.user });
     return res.data;
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const res = await axios.get('https://vibeflix-ai.vercel.app/api/auth/profile', {
+        const res = await axios.get('/api/auth/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUser({ token, ...res.data });
