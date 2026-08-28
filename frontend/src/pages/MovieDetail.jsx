@@ -45,7 +45,7 @@ const MovieDetail = () => {
       if (inWatchlist) {
         // Find the database ID if we only have tmdbId
         const dbId = user.watchlist.find(m => m.tmdbId === movie.id || m._id === movie.id)?._id;
-        await axios.delete(`https://vibeflix-ai.vercel.app/api/movies/watchlist/${dbId || movie.id}`, {
+        await axios.delete(`/api/movies/watchlist/${dbId || movie.id}`, {
           headers: { Authorization: `Bearer ${user.token}` }
         });
       } else {
