@@ -119,7 +119,7 @@ exports.getCollections = async (req, res) => {
 
 /**
  * GET /api/movies/by-genre/:genreId
- * Returns dynamic movies/series by TMDB Genre ID
+ * Returns dynamic movies/series by OTT, Genre, Year, Quality or Region
  */
 exports.getByGenre = async (req, res) => {
   try {
@@ -127,15 +127,52 @@ exports.getByGenre = async (req, res) => {
     const apiKey = process.env.TMDB_API_KEY;
     if (!apiKey) return res.json([]);
 
-    let url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${genreId}&sort_by=popularity.desc`;
-    if (genreId === 'series' || genreId === 'tv') {
-      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&sort_by=popularity.desc`;
-    } else if (genreId === 'bollywood') {
-      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_original_language=hi&sort_by=popularity.desc`;
-    } else if (genreId === 'hollywood') {
-      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_original_language=en&sort_by=popularity.desc`;
+    let url = '';
+
+    // OTT Platforms
+    if (genreId === 'netflix') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_networks=213&sort_by=popularity.desc`;
+    } else if (genreId === 'appletv' || genreId === 'apple-tv') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_networks=2552&sort_by=popularity.desc`;
+    } else if (genreId === 'amazon-prime' || genreId === 'prime') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_networks=1024&sort_by=popularity.desc`;
+    } else if (genreId === 'disney' || genreId === 'hotstar') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_networks=2739&sort_by=popularity.desc`;
+    } else if (genreId === 'hbo' || genreId === 'max') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_networks=49&sort_by=popularity.desc`;
+    } else if (genreId === 'kdrama' || genreId === 'korean') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_original_language=ko&sort_by=popularity.desc`;
+    } else if (genreId === 'turkish') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_original_language=tr&sort_by=popularity.desc`;
+    } else if (genreId === 'chinese') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_original_language=zh&sort_by=popularity.desc`;
     } else if (genreId === 'anime') {
       url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_genres=16&sort_by=popularity.desc`;
+    } else if (genreId === 'series' || genreId === 'tv') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&sort_by=popularity.desc`;
+    }
+    // Languages & Regions
+    else if (genreId === 'bollywood' || genreId === 'hindi') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_original_language=hi&sort_by=popularity.desc`;
+    } else if (genreId === 'hollywood' || genreId === 'english') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_original_language=en&sort_by=popularity.desc`;
+    } else if (genreId === 'south-indian' || genreId === 'south') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_original_language=te|ta|ml|kn&sort_by=popularity.desc`;
+    }
+    // Years (e.g. year-2026, year-2025 or numeric 2026)
+    else if (genreId.startsWith('year-') || (/^\d{4}$/.test(genreId) && parseInt(genreId) >= 1970)) {
+      const year = genreId.replace('year-', '');
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&primary_release_year=${year}&sort_by=popularity.desc`;
+    }
+    // Qualities / High Bitrate (4K UHD Top Rated / 60fps / 1080p)
+    else if (genreId === '4k' || genreId === '2160p') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&vote_average.gte=7.5&vote_count.gte=300&sort_by=popularity.desc`;
+    } else if (genreId === '1080p' || genreId === '720p') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&sort_by=popularity.desc`;
+    }
+    // Standard Genres (numeric ID or slug)
+    else {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${genreId}&sort_by=popularity.desc`;
     }
 
     const response = await axios.get(url);
