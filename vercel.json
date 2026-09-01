@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build && node -e \"require('fs').cpSync('dist', '../public', {recursive: true})\" && cd ../backend && npm install",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "public",
   "functions": {
     "api/server.js": {

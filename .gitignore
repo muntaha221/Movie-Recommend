@@ -6,3 +6,7 @@ frontend/dist/
 scraped_posters.json
 *.log
 .vercel
+add-env.js
+build.js
+
+.vercel

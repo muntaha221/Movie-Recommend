@@ -18,10 +18,12 @@ const Home = () => {
           axios.get('/api/movies/trending'),
           axios.get('/api/movies/collections')
         ]);
-        setTrending(trendRes.data);
-        setCollections(collRes.data);
+        setTrending(Array.isArray(trendRes.data) ? trendRes.data : []);
+        setCollections(collRes.data && typeof collRes.data === 'object' && !Array.isArray(collRes.data) ? collRes.data : {});
       } catch (err) {
-        console.error(err);
+        console.error('Failed to fetch home data:', err);
+        setTrending([]);
+        setCollections({});
       } finally {
         setLoading(false);
       }
@@ -30,8 +32,8 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      gsap.fromTo(rowsRef.current, 
+    if (!loading && rowsRef.current.length > 0) {
+      gsap.fromTo(rowsRef.current.filter(Boolean), 
         { y: 60, opacity: 0 }, 
         { y: 0, opacity: 1, duration: 1, stagger: 0.15, ease: 'power3.out' }
       );
@@ -48,11 +50,12 @@ const Home = () => {
 
   return (
     <div className="home-clean">
-      <HeroSection movies={trending.slice(0, 8)} />
+      <HeroSection movies={Array.isArray(trending) ? trending.slice(0, 8) : []} />
       
       <div className="container main-content">
         {collectionOrder.map((section, idx) => {
-          const sectionData = section.data || collections[section.key] || [];
+          const raw = section.data || (collections && collections[section.key]) || [];
+          const sectionData = Array.isArray(raw) ? raw : [];
           if (sectionData.length === 0) return null;
 
           return (
@@ -62,13 +65,13 @@ const Home = () => {
               </div>
               <div className="horizontal-scroll premium-scroll">
                 {sectionData.map((m, mIdx) => (
-                  <div key={m.id || mIdx} className="scroll-item">
+                  <div key={m?.tmdbId || m?.id || mIdx} className="scroll-item">
                     <MovieCard movie={{
-                      tmdbId: m.id,
-                      title: m.title,
-                      posterPath: m.poster_path,
-                      voteAverage: m.vote_average,
-                      releaseDate: m.release_date
+                      tmdbId: m?.tmdbId || m?.id,
+                      title: m?.title || m?.name || 'Untitled',
+                      posterPath: m?.poster_path || m?.posterPath,
+                      voteAverage: m?.vote_average || m?.voteAverage,
+                      releaseDate: m?.release_date || m?.releaseDate
                     }} />
                   </div>
                 ))}
