@@ -234,6 +234,18 @@
 }
 
 /* Success button for watchlist */
+.btn-watch-online {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.btn-watch-online:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
 .btn-success {
   background: #22c55e;
   color: white;

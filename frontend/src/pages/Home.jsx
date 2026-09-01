@@ -77,7 +77,6 @@ const Home = () => {
   const allSections = [
     { id: 'trending', title: '🔥 Trending Global', data: trending },
     { key: 'trending_series', title: '🎬 Trending Web Series' },
-    { key: 'trending_movies', title: '🍿 Trending Movies' },
     { key: 'latest_releases', title: '🌟 Latest Releases' },
     { key: 'top_rated', title: '⭐ All-Time Top Rated' },
     { key: 'bollywood_hits', title: '🇮🇳 Bollywood Hits' },

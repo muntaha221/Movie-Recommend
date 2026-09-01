@@ -166,9 +166,11 @@ exports.getByGenre = async (req, res) => {
     }
     // Qualities / High Bitrate (4K UHD Top Rated / 60fps / 1080p)
     else if (genreId === '4k' || genreId === '2160p') {
-      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&vote_average.gte=7.5&vote_count.gte=300&sort_by=popularity.desc`;
-    } else if (genreId === '1080p' || genreId === '720p') {
-      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&sort_by=popularity.desc`;
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&sort_by=vote_average.desc&vote_count.gte=500&vote_average.gte=7.5`;
+    } else if (genreId === '1080p') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&sort_by=popularity.desc&vote_count.gte=200`;
+    } else if (genreId === '720p') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&sort_by=release_date.desc&vote_count.gte=50`;
     }
     // Standard Genres (numeric ID or slug)
     else {

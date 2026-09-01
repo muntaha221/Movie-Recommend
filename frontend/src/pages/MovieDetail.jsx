@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Star, Clock, Calendar, Bookmark, Play, ArrowLeft, Check, X, Sparkles } from 'lucide-react';
+import { Star, Clock, Calendar, Bookmark, Play, ArrowLeft, Check, X, Sparkles, ExternalLink } from 'lucide-react';
 import MovieCard from '../components/MovieCard';
 import './MovieDetail.css';
 import { useAuth } from '../context/AuthContext';
@@ -174,6 +174,12 @@ const MovieDetail = () => {
               <div className="detail-actions">
                 <button className="btn btn-primary" onClick={handleWatchTrailer}>
                   <Play fill="currentColor" size={18} /> Watch Trailer
+                </button>
+                <button
+                  className="btn btn-watch-online"
+                  onClick={() => window.open(`https://watch-v2.autoembed.app/search?q=${encodeURIComponent(movie.title || '')}`, '_blank')}
+                >
+                  <ExternalLink size={18} /> Watch / Download
                 </button>
                 <button 
                   className={`btn ${inWatchlist ? 'btn-success' : 'btn-outline'}`}
