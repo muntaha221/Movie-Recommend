@@ -253,7 +253,16 @@
 
 @media (max-width: 1000px) {
   .detail-main { grid-template-columns: 1fr; gap: 2rem; }
-  .detail-poster-container { max-width: 300px; margin: 0 auto; }
-  .detail-title { font-size: 2.5rem; }
+  .detail-poster-container { max-width: 260px; margin: 0 auto; }
+  .detail-title { font-size: 2.2rem; }
   .trailer-modal { width: 95vw; }
 }
+
+@media (max-width: 600px) {
+  .detail-title { font-size: 1.8rem; }
+  .detail-meta { flex-wrap: wrap; gap: 1rem; font-size: 0.9rem; }
+  .detail-actions { flex-direction: column; width: 100%; gap: 0.8rem; }
+  .detail-actions .btn { width: 100%; }
+  .user-rating-section { width: 100%; max-width: 100%; }
+}
+

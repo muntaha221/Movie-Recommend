@@ -1,0 +1,105 @@
+.category-bar-wrapper {
+  position: sticky;
+  top: 70px;
+  z-index: 900;
+  background: var(--nav-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 12px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.category-container {
+  padding: 0 1.5rem;
+}
+
+.category-scroll {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 4px 2px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 30px;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.category-pill:hover {
+  background: rgba(229, 9, 20, 0.15);
+  border-color: rgba(229, 9, 20, 0.4);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.category-pill.active {
+  background: linear-gradient(135deg, #e50914 0%, #b9090b 100%);
+  border-color: #e50914;
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.45);
+  transform: translateY(-1px);
+}
+
+.category-icon {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.category-pill:hover .category-icon,
+.category-pill.active .category-icon {
+  transform: scale(1.1);
+}
+
+.active-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ffffff;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+@media (max-width: 768px) {
+  .category-bar-wrapper {
+    top: 60px;
+    padding: 8px 0;
+  }
+  .category-container {
+    padding: 0 1rem;
+  }
+  .category-pill {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+}

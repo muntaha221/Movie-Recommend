@@ -4,38 +4,45 @@ const axios = require('axios');
 const tmdbCache = new Map();
 
 /**
+ * Format TMDB item (handles both Movie and TV objects)
+ */
+const formatTMDBItem = (item) => {
+  if (!item) return null;
+  const isTv = !item.title && !!item.name;
+  return {
+    id: item.id,
+    tmdbId: item.id,
+    title: item.title || item.name || 'Untitled',
+    poster_path: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+    backdrop_path: item.backdrop_path ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` : null,
+    posterPath: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+    backdropPath: item.backdrop_path ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` : null,
+    vote_average: item.vote_average || 7.0,
+    voteAverage: item.vote_average || 7.0,
+    release_date: item.release_date || item.first_air_date || '2026',
+    releaseDate: item.release_date || item.first_air_date || '2026',
+    overview: item.overview || '',
+    media_type: item.media_type || (isTv ? 'tv' : 'movie'),
+    genre_ids: item.genre_ids || []
+  };
+};
+
+/**
  * Fetches real movie/TV data from TMDB Search API based on title.
- * Follows the strict mandatory process requested by the user.
  */
 const fetchTMDBData = async (title) => {
   const apiKey = process.env.TMDB_API_KEY;
-  if (!apiKey) {
-    console.warn('TMDB_API_KEY is missing. Using fallback for:', title);
-    return null;
-  }
-  
+  if (!apiKey) return null;
   if (tmdbCache.has(title)) return tmdbCache.get(title);
 
   try {
-    // 2. Send a request to TMDB Search API (multi search to handle both movies and TV)
     const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(title)}`;
     const response = await axios.get(searchUrl);
-    const results = response.data.results;
-    
-    // 3. Pick the FIRST valid result with a poster
+    const results = response.data.results || [];
     const bestMatch = results.find(r => r.poster_path);
     
     if (bestMatch) {
-      const data = {
-        tmdbId: bestMatch.id,
-        title: bestMatch.title || bestMatch.name,
-        // 4. Build poster image URL
-        poster_path: `https://image.tmdb.org/t/p/w500${bestMatch.poster_path}`,
-        backdrop_path: bestMatch.backdrop_path ? `https://image.tmdb.org/t/p/original${bestMatch.backdrop_path}` : null,
-        vote_average: bestMatch.vote_average,
-        release_date: bestMatch.release_date || bestMatch.first_air_date,
-        overview: bestMatch.overview
-      };
+      const data = formatTMDBItem(bestMatch);
       tmdbCache.set(title, data);
       return data;
     }
@@ -46,97 +53,157 @@ const fetchTMDBData = async (title) => {
   }
 };
 
-const collections = {
-  trending_series: ['The Boys', 'Daredevil', 'Monarch: Legacy of Monsters'],
-  trending_movies: ['The Fall Guy', 'La La Land', 'Wrath of the Titans']
-};
-
 /**
- * Enriches a list of titles with real TMDB metadata.
+ * GET /api/movies/trending
+ * Returns trending global movies & TV for hero banner and top row
  */
-const enrichCollection = async (titles) => {
-  return Promise.all(titles.map(async (title) => {
-    const data = await fetchTMDBData(title);
-    if (data) return data;
-    
-    // Fallback placeholder (ONLY if no result found or poster_path is null)
-    return {
-      tmdbId: Math.random().toString(36).substr(2, 9),
-      title: title,
-      poster_path: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=500&auto=format&fit=crop',
-      vote_average: 0,
-      release_date: '2026-01-01'
-    };
-  }));
-};
-
 exports.getTrending = async (req, res) => {
   try {
     const apiKey = process.env.TMDB_API_KEY;
     if (apiKey) {
-      // Fetch actual trending movies from TMDB
-      const response = await axios.get(`https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}`);
-      const enriched = response.data.results.map(m => ({
-        ...m,
-        tmdbId: m.id,
-        poster_path: `https://image.tmdb.org/t/p/w500${m.poster_path}`,
-        backdrop_path: `https://image.tmdb.org/t/p/original${m.backdrop_path}`,
-        vote_average: m.vote_average,
-        release_date: m.release_date || m.first_air_date
-      }));
+      const response = await axios.get(`https://api.themoviedb.org/3/trending/all/week?api_key=${apiKey}`);
+      const enriched = (response.data.results || [])
+        .filter(m => m.poster_path)
+        .map(formatTMDBItem);
       return res.json(enriched);
     }
-    
-    // Fallback to searching our curated titles
-    const fallback = await enrichCollection([...collections.trending_series, ...collections.trending_movies]);
-    res.json(fallback);
+    res.json([]);
   } catch (error) {
+    console.error('getTrending error:', error.message);
     res.json([]);
   }
 };
 
+/**
+ * GET /api/movies/collections
+ * Dynamic real-time categories: Trending TV Series, Trending Movies, Latest Releases, Top Rated, Bollywood Hits, Popular Anime
+ */
 exports.getCollections = async (req, res) => {
-  const enriched = {};
-  for (const [key, titles] of Object.entries(collections)) {
-    enriched[key] = await enrichCollection(titles);
+  try {
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey) {
+      return res.json({});
+    }
+
+    const [seriesRes, moviesRes, latestRes, topRatedRes, bollywoodRes, animeRes] = await Promise.allSettled([
+      axios.get(`https://api.themoviedb.org/3/trending/tv/week?api_key=${apiKey}`),
+      axios.get(`https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}`),
+      axios.get(`https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}`),
+      axios.get(`https://api.themoviedb.org/3/movie/top_rated?api_key=${apiKey}`),
+      axios.get(`https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_original_language=hi&sort_by=popularity.desc`),
+      axios.get(`https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_genres=16&sort_by=popularity.desc`)
+    ]);
+
+    const formatResults = (resPromise) => {
+      if (resPromise.status === 'fulfilled' && resPromise.value.data?.results) {
+        return resPromise.value.data.results.filter(m => m.poster_path).map(formatTMDBItem);
+      }
+      return [];
+    };
+
+    const enriched = {
+      trending_series: formatResults(seriesRes),
+      trending_movies: formatResults(moviesRes),
+      latest_releases: formatResults(latestRes),
+      top_rated: formatResults(topRatedRes),
+      bollywood_hits: formatResults(bollywoodRes),
+      popular_anime: formatResults(animeRes)
+    };
+
+    res.json(enriched);
+  } catch (error) {
+    console.error('getCollections error:', error.message);
+    res.json({});
   }
-  res.json(enriched);
 };
 
+/**
+ * GET /api/movies/by-genre/:genreId
+ * Returns dynamic movies/series by TMDB Genre ID
+ */
+exports.getByGenre = async (req, res) => {
+  try {
+    const { genreId } = req.params;
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey) return res.json([]);
+
+    let url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${genreId}&sort_by=popularity.desc`;
+    if (genreId === 'series' || genreId === 'tv') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&sort_by=popularity.desc`;
+    } else if (genreId === 'bollywood') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_original_language=hi&sort_by=popularity.desc`;
+    } else if (genreId === 'hollywood') {
+      url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_original_language=en&sort_by=popularity.desc`;
+    } else if (genreId === 'anime') {
+      url = `https://api.themoviedb.org/3/discover/tv?api_key=${apiKey}&with_genres=16&sort_by=popularity.desc`;
+    }
+
+    const response = await axios.get(url);
+    const results = (response.data.results || []).filter(m => m.poster_path).map(formatTMDBItem);
+    res.json(results);
+  } catch (error) {
+    console.error('getByGenre error:', error.message);
+    res.json([]);
+  }
+};
+
+/**
+ * GET /api/movies/details/:id
+ * Fetches details + similar + videos for movie or TV show
+ */
 exports.getMovieDetails = async (req, res) => {
   try {
     const { id } = req.params;
     const apiKey = process.env.TMDB_API_KEY;
     
     if (!apiKey) {
-      const all = await enrichCollection([...collections.trending_series, ...collections.trending_movies]);
-      const movie = all.find(m => m.tmdbId == id) || all[0];
-      return res.json({ ...movie, similar: all.filter(m => m.tmdbId != id).slice(0, 10) });
+      return res.status(404).json({ error: 'TMDB API key not configured' });
     }
 
-    const [details, similar] = await Promise.all([
-      axios.get(`https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}`),
-      axios.get(`https://api.themoviedb.org/3/movie/${id}/similar?api_key=${apiKey}`)
-    ]);
+    // Try fetching movie details first
+    let isTv = false;
+    let details, similar, videos;
 
+    try {
+      [details, similar, videos] = await Promise.all([
+        axios.get(`https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}`),
+        axios.get(`https://api.themoviedb.org/3/movie/${id}/similar?api_key=${apiKey}`),
+        axios.get(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${apiKey}`).catch(() => ({ data: { results: [] } }))
+      ]);
+    } catch (movieErr) {
+      // If movie fails (e.g. 404), try TV endpoint
+      isTv = true;
+      [details, similar, videos] = await Promise.all([
+        axios.get(`https://api.themoviedb.org/3/tv/${id}?api_key=${apiKey}`),
+        axios.get(`https://api.themoviedb.org/3/tv/${id}/similar?api_key=${apiKey}`),
+        axios.get(`https://api.themoviedb.org/3/tv/${id}/videos?api_key=${apiKey}`).catch(() => ({ data: { results: [] } }))
+      ]);
+    }
+
+    const raw = details.data;
     const enrichedDetails = {
-      ...details.data,
-      tmdbId: details.data.id,
-      poster_path: `https://image.tmdb.org/t/p/w500${details.data.poster_path}`,
-      backdrop_path: `https://image.tmdb.org/t/p/original${details.data.backdrop_path}`,
-      similar: similar.data.results.map(m => ({
-        ...m,
-        tmdbId: m.id,
-        poster_path: `https://image.tmdb.org/t/p/w500${m.poster_path}`
-      }))
+      ...raw,
+      id: raw.id,
+      tmdbId: raw.id,
+      title: raw.title || raw.name,
+      media_type: isTv ? 'tv' : 'movie',
+      release_date: raw.release_date || raw.first_air_date,
+      poster_path: raw.poster_path ? `https://image.tmdb.org/t/p/w500${raw.poster_path}` : null,
+      backdrop_path: raw.backdrop_path ? `https://image.tmdb.org/t/p/original${raw.backdrop_path}` : null,
+      videos: videos?.data?.results || [],
+      similar: (similar?.data?.results || []).filter(m => m.poster_path).map(formatTMDBItem)
     };
 
     res.json(enrichedDetails);
   } catch (error) {
-    res.status(404).json({ error: 'Movie not found' });
+    console.error('getMovieDetails error:', error.message);
+    res.status(404).json({ error: 'Media not found' });
   }
 };
 
+/**
+ * Watchlist & Reviews logic
+ */
 exports.addToWatchlist = async (req, res) => {
   try {
     const { movie } = req.body;
@@ -148,12 +215,12 @@ exports.addToWatchlist = async (req, res) => {
       dbMovie = new Movie({
         tmdbId: movie.tmdbId,
         title: movie.title,
-        posterPath: movie.poster_path,
-        backdropPath: movie.backdrop_path,
+        posterPath: movie.poster_path || movie.posterPath,
+        backdropPath: movie.backdrop_path || movie.backdropPath,
         overview: movie.overview,
-        releaseDate: movie.release_date,
-        voteAverage: movie.vote_average,
-        genres: movie.genres?.map(g => g.name) || []
+        releaseDate: movie.release_date || movie.releaseDate,
+        voteAverage: movie.vote_average || movie.voteAverage,
+        genres: movie.genres?.map(g => (typeof g === 'string' ? g : g.name)) || []
       });
       await dbMovie.save();
     }
@@ -206,3 +273,4 @@ exports.getMovieReviews = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+

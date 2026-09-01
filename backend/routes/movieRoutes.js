@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 
 router.get('/trending', movieController.getTrending);
 router.get('/collections', movieController.getCollections);
+router.get('/by-genre/:genreId', movieController.getByGenre);
 router.get('/details/:id', movieController.getMovieDetails);
 router.post('/watchlist', auth, movieController.addToWatchlist);
 router.delete('/watchlist/:movieId', auth, movieController.removeFromWatchlist);
